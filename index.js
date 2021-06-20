@@ -26,6 +26,14 @@ const db = mysql.createConnection({
     database: "examen2"
 })
 
+const db_pool = mysql.createPool({
+    host: 'servicio.mysql.database.azure.com',
+    user: 'Jhona@servicio',
+    password: 'UHPYtvnk1610',
+    port: '3306',
+    database: "examen2"
+});
+
 /*
 host: 'servicio.mysql.database.azure.com',
     user: 'Jhona@servicio',
@@ -39,19 +47,42 @@ host: 'servicio.mysql.database.azure.com',
     password: 'alex',
     database: "examen"
 */
-db.connect(error =>{
+/*db.connect(error =>{
     if(error) throw error;
     console.log('Conexion exitosa a la db');
-})
+})*/
 
 app.post('/transferir', (req, res)=>{
     console.log(req.body);
     const descripcion = req.body.descripcion
-    const fechaTransaccion = new Date();
+    const fechaTransaccion = Date;
     const monto = req.body.monto
     const tipoTransaccion = req.body.tipoTransaccion
     const cuentaNumero = req.body.cuentaBancaria
-    
+    fechaTransaccion = new Date();
+    console.log('fecha a ingresar: ', fechaTransaccion);
+
+    db_pool.getConnection(function(err, conn){
+        if(err){
+            console.log('conexion fallo');
+        }else{
+            conn.query(
+                'INSERT INTO transaccion (descripcion, fechatransaccion, monto, tipotransaccion, cuenta_numero) VALUES (?,?,?,?)', 
+            [descripcion,fechaTransaccion, monto, tipoTransaccion, cuentaNumero], 
+            (err, result )=>{
+                if(err){
+                    console.log('error insertando: ', err.message)
+                }else{
+                    res.send({'status':'200', 'message':'Transaccion exitosa'})
+                }
+            }
+            );
+            conn.release();
+        }
+        
+    })
+
+    /*
     db.query(
         'INSERT INTO transaccion (descripcion, monto, tipotransaccion, cuenta_numero) VALUES (?,?,?,?)', 
         [descripcion, monto, tipoTransaccion, cuentaNumero], 
@@ -62,8 +93,45 @@ app.post('/transferir', (req, res)=>{
                 res.send({'status':'200', 'message':'Transaccion exitosa'})
             }
         }
-    )
+    )*/
 
+});
+
+app.get('/transacciones', (req, res)=>{
+    db_pool.getConnection(function(err, conn){
+        if(err){
+            console.log('conexion fallo');
+        }else{
+            conn.query(
+                'SELECT * FROM transaccion', (error, result)=>{
+                    if(error){
+                        console.log('error: ', error)
+                    }else{
+                        res.send(result)
+                    }
+                });
+            conn.release();
+        }
+        
+    })
+
+    /*db_pool.query(
+        'SELECT * FROM transaccion', (error, result)=>{
+            if(error){
+                console.log('error: ', error)
+            }else{
+                res.send(result)
+            }
+        }
+    )*/
+    
+    /*db.query('SELECT * FROM transaccion', (error, result)=>{
+        if(error){
+            console.log('error: ', error)
+        }else{
+            res.send(result)
+        }
+    })*/
 });
 
 
